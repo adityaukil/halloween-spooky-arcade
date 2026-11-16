@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpookyHallow - The Never-Ending Crypt</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%200%22%20100%22%20100%22><text y=%22.9em%22 font-size=%2290%22>🎃</text></svg>">
+</head>
+<body>
+  <!-- Top Blood Drip Barrier -->
+  <div class="blood-drip-top"></div>
+
+  <!-- "ENTER IF YOU DARE" Blood Gatekeeper Overlay -->
+  <div id="gatekeeper-modal">
+    <div class="gatekeeper-parchment">
+      <div class="gatekeeper-skull">💀</div>
+      <h2 class="gatekeeper-warning-title">TRESPASSERS BEWARE</h2>
+      <p class="gatekeeper-lore">
+        "You stand at the threshold of the SpookyHallow Crypt. The spirits within hunger for souls that dare to test their fate. Once the blood seal is shattered, the mist takes hold and there is no turning back."
+      </p>
+      <button id="btn-unseal-crypt" class="btn-blood-seal">
+        <span>🩸 ENTER IF YOU DARE</span>
+        <span>⚔️</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Ambient Atmospheric Canvas (Bats, Fog, Moon, Lightning, Lurking Eyes) -->
+  <canvas id="ambient-canvas"></canvas>
+
+  <div class="site-wrapper">
+    <!-- Header -->
+    <header>
+      <div class="brand-section">
+        <div class="brand-icon">🎃</div>
+        <div>
+          <h1 class="brand-title">SPOOKYHALLOW</h1>
+          <div class="brand-subtitle">THE NEVER-ENDING REAL-TIME HALLOWEEN ARCADE</div>
+        </div>
+      </div>
+
+      <div class="top-controls">
+        <div class="connection-pill">
+          <div id="connection-status-dot" class="status-dot offline"></div>
+          <span id="connection-status-text">Crypt Link: Synchronizing...</span>
+        </div>
+
+        <div id="btn-edit-profile" class="player-profile-badge" title="Sign The Blood Pact / Change Spirit">
+          <span id="player-avatar-display" class="player-avatar-circle">🎃</span>
+          <span id="player-name-display" class="player-name-label">Spirit</span>
+          <span style="font-size: 0.75rem; opacity: 0.7;">✏️</span>
+        </div>
+
+        <div class="audio-toggle-group">
+          <button id="btn-toggle-bgm" class="btn-spooky-secondary" title="Toggle Haunted Ambient Drone">
+            🔈 Haunting Drone: OFF
+          </button>
+          <button id="btn-toggle-sfx" class="btn-spooky-secondary active" title="Toggle Halloween Sound Effects">
+            ⚡ Spooky SFX: ON
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Global Spooky Announcement Banner -->
+    <div id="spooky-alert-banner" class="spooky-banner">
+      🎃 WELCOME TO SPOOKYHALLOW! THE VEIL BETWEEN WORLDS IS THIN...
+    </div>
+
+    <!-- Haunt Energy Bar & Live Status -->
+    <section class="haunt-status-bar">
+      <div class="haunt-meter-wrap">
+        <div class="haunt-label-row">
+          <span>Global Haunting Energy</span>
+          <span id="haunt-meter-text">35% Haunt Energy</span>
+        </div>
+        <div class="haunt-progress-track">
+          <div id="haunt-meter-bar" class="haunt-progress-fill" style="width: 35%;"></div>
+        </div>
+      </div>
+
+      <div id="blood-moon-indicator" class="blood-moon-badge" style="display: none;">
+        🌕🩸 BLOOD MOON ACTIVE! 2X SCORE SURGE! 🩸🌕
+      </div>
+
+      <div class="live-spirits-tag">
+        <span>🕯️</span>
+        <span id="live-spirits-count">1 Spirit Lurking</span>
+      </div>
+    </section>
+
+    <!-- Main Content: Arcade Hub + Sidebar -->
+    <main class="arcade-content-grid">
+      <!-- Left Column: Spooky Games Grid -->
+      <section class="games-section">
+        <div class="games-hub-header">
+          <h2 class="section-title"><span>🕸️</span> Cursed Trials of Survival</h2>
+          <p class="section-subtext">Difficulty accelerates infinitely with no end. Scores sync live to the global crypt. How high can you survive?</p>
+        </div>
+
+        <div class="games-cards-grid">
+          <!-- Game 1: Soul Heist: The Crypt Vault -->
+          <article class="game-card">
+            <div>
+              <div class="card-top">
+                <div class="card-icon">🗝️</div>
+                <div>
+                  <h3 class="card-title">Soul Heist: Crypt Vault</h3>
+                  <span class="card-badge">Dark Physics Stealth</span>
+                </div>
+              </div>
+              <p class="card-desc">
+                Slingshot through darkness using phantom tethers! Latch onto gargoyle anchors, evade moving Inquisitor spotlights, snatch cursed relics, and descend infinite vault floors.
+              </p>
+              <div class="card-features">
+                <span class="feature-tag">🪢 Slingshot Tether</span>
+                <span class="feature-tag">🔦 Shadow Stealth</span>
+                <span class="feature-tag">🗝️ Infinite Vault Floors</span>
+              </div>
+            </div>
+            <button class="btn-launch-game" data-game="soulheist">
+              <span>Infiltrate Vault</span>
+              <span>🗝️</span>
+            </button>
+          </article>
+
+          <!-- Game 2: Necromancer's Ritual: Rune Weaving -->
+          <article class="game-card">
+            <div>
+              <div class="card-top">
+                <div class="card-icon">🔯</div>
+                <div>
+                  <h3 class="card-title">Necromancer's Ritual</h3>
+                  <span class="card-badge">Rune Gesture Magic</span>
+                </div>
+              </div>
+              <p class="card-desc">
+                Draw occult runes with mouse or touch to cast devastating dark spells! Circle = Hellfire Nova, Line = Bone Cleave, V = Bat Swarm, Z = Chain Lightning against endless fiend hordes!
+              </p>
+              <div class="card-features">
+                <span class="feature-tag">✏️ Gesture Spellcasting</span>
+                <span class="feature-tag">⚡ 4 Occult Elements</span>
+                <span class="feature-tag">💀 Defend The Altar</span>
+              </div>
+            </div>
+            <button class="btn-launch-game" data-game="necromancer">
+              <span>Weave The Runes</span>
+              <span>🔯</span>
+            </button>
+          </article>
+
+          <!-- Game 3: Midnight Survivor: Cursed Carnival -->
+          <article class="game-card">
+            <div>
+              <div class="card-top">
+                <div class="card-icon">🗡️</div>
+                <div>
+                  <h3 class="card-title">Midnight Survivor</h3>
+                  <span class="card-badge">Bullet-Heaven Roguelite</span>
+                </div>
+              </div>
+              <p class="card-desc">
+                Roam freely across the cursed carnival. Auto-fire orbiting Jack-o'-lanterns, vorpal scythes, and homing bats into swarms of 100+ ghouls. Harvest soul gems and build unstoppable perk synergies!
+              </p>
+              <div class="card-features">
+                <span class="feature-tag">🕹️ Free 360° Movement</span>
+                <span class="feature-tag">🎃 Auto-Firing Arsenal</span>
+                <span class="feature-tag">🧬 Level-Up Perk Trees</span>
+              </div>
+            </div>
+            <button class="btn-launch-game" data-game="survivor">
+              <span>Enter The Carnival</span>
+              <span>🗡️</span>
+            </button>
+          </article>
+        </div>
+
+        <!-- Spellcaster / Cursed Box (Multiplayer real-time effects) -->
+        <section class="spell-caster-box">
+          <div class="spell-box-header">🔮 Cursed Conjuration Circle</div>
+          <div class="spell-box-subtitle">Cast spooky curses and chants that instantly manifest across all connected spirits' screens!</div>
+          <div class="spell-buttons-row">
+            <button class="spell-btn" data-spell="🎃" title="Jack-o-Lantern">🎃</button>
+            <button class="spell-btn" data-spell="👻" title="Ghost">👻</button>
+            <button class="spell-btn" data-spell="🦇" title="Bat">🦇</button>
+            <button class="spell-btn" data-spell="💀" title="Skull">💀</button>
+            <button class="spell-btn" data-spell="🍬" title="Candy">🍬</button>
+            <button class="spell-btn" data-spell="🩸" title="Blood">🩸</button>
+            <button class="spell-btn" data-spell="⚡" title="Lightning">⚡</button>
+            <button class="spell-btn" data-spell="🧙‍♀️" title="Witch">🧙‍♀️</button>
+          </div>
+          <div class="spell-chat-row">
+            <input type="text" id="spell-chat-input" class="spell-chat-input" placeholder="Whisper a chant into the darkness..." maxlength="40">
+            <button id="btn-cast-spell" class="btn-spooky-secondary" style="background: var(--pumpkin-orange); color: #fff;">
+              Cast Spell ✨
+            </button>
+          </div>
+        </section>
+      </section>
+
+      <!-- Right Column: Synchronized Live Leaderboard & Activity Feed -->
+      <aside class="sidebar-panel">
+        <!-- Live Leaderboard Box -->
+        <div class="leaderboard-box">
+          <h3 class="box-heading"><span>🏆</span> Crypt Leaderboard</h3>
+          <div class="tabs-row">
+            <button class="tab-btn active" data-tab="soulheist">🗝️ Vault Heist</button>
+            <button class="tab-btn" data-tab="necromancer">🔯 Necromancy</button>
+            <button class="tab-btn" data-tab="survivor">🗡️ Survivor</button>
+          </div>
+
+          <div id="board-soulheist" class="leaderboard-panel active">
+            <div id="leaderboard-soulheist"></div>
+          </div>
+          <div id="board-necromancer" class="leaderboard-panel">
+            <div id="leaderboard-necromancer"></div>
+          </div>
+          <div id="board-survivor" class="leaderboard-panel">
+            <div id="leaderboard-survivor"></div>
+          </div>
+        </div>
+
+        <!-- Real-Time Activity Feed -->
+        <div class="feed-box">
+          <h3 class="box-heading"><span>📜</span> Midnight Chronicles</h3>
+          <div id="activity-feed" class="activity-feed-list"></div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Interactive Game Modal Viewport -->
+  <div id="game-modal" class="spooky-modal-overlay">
+    <div class="game-modal-content">
+      <div class="game-modal-header">
+        <h3 id="game-modal-title" class="game-modal-title">Game Title</h3>
+        <button id="btn-quit-game" class="btn-quit">Exit to Crypt ✖</button>
+      </div>
+
+      <div class="canvas-viewport">
+        <canvas id="game-canvas" width="800" height="450"></canvas>
+      </div>
+
+      <div class="game-instructions-bar">
+        <span id="game-instructions-text">Instructions</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Over Modal (Z-Index 150 - Always cleanly on top) -->
+  <div id="gameover-modal" class="spooky-modal-overlay">
+    <div class="gameover-box">
+      <h2 id="gameover-title" class="gameover-title">REST IN PEACE</h2>
+      <div class="gameover-score-wrap">
+        <div class="gameover-score-label">Final Score Achieved</div>
+        <div id="gameover-score-value" class="gameover-score-val">0</div>
+      </div>
+      <p id="gameover-message" class="gameover-msg">Your soul now wanders the mist...</p>
+      <div class="gameover-actions">
+        <button id="btn-retry-game" class="btn-spooky-retry">
+          Try Again 🔄
+        </button>
+        <button id="btn-exit-gameover" class="btn-spooky-secondary" style="padding: 0.6rem 1.2rem;">
+          Return to Hub
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Settings Modal -->
+  <div id="profile-modal" class="spooky-modal-overlay">
+    <div class="profile-edit-box">
+      <h3 style="font-family: 'Creepster', cursive; font-size: 1.5rem; color: var(--pumpkin-orange); margin-bottom: 0.8rem;">
+        Sign Blood Pact
+      </h3>
+      <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">
+        Spirit Name
+      </label>
+      <input type="text" id="profile-name-input" class="spell-chat-input" style="width: 100%; margin-bottom: 1rem;" maxlength="16" placeholder="Spirit Name">
+
+      <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">
+        Choose Spooky Avatar
+      </label>
+      <div class="avatar-selector-grid">
+        <div class="avatar-choice selected" data-avatar="🎃">🎃</div>
+        <div class="avatar-choice" data-avatar="👻">👻</div>
+        <div class="avatar-choice" data-avatar="🧙‍♀️">🧙‍♀️</div>
+        <div class="avatar-choice" data-avatar="🦇">🦇</div>
+        <div class="avatar-choice" data-avatar="💀">💀</div>
+        <div class="avatar-choice" data-avatar="🧛‍♂️">🧛‍♂️</div>
+        <div class="avatar-choice" data-avatar="🕷️">🕷️</div>
+        <div class="avatar-choice" data-avatar="🧟">🧟</div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1.2rem;">
+        <button id="btn-close-profile" class="btn-spooky-secondary">Cancel</button>
+        <button id="btn-save-profile" class="btn-spooky-secondary" style="background: var(--pumpkin-orange); color: #fff;">
+          Save Spirit
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Socket.IO library served directly by Express server -->
+  <script src="/socket.io/socket.io.js"></script>
+
+  <!-- Client Application Scripts -->
+  <script src="js/audio.js"></script>
+  <script src="js/ambient.js"></script>
+  <script src="js/network.js"></script>
+  <script src="js/game1-soulheist.js"></script>
+  <script src="js/game2-necromancer.js"></script>
+  <script src="js/game3-survivor.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

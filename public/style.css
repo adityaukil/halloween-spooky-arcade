@@ -1,0 +1,933 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;900&family=Creepster&family=Nosifer&family=Nunito:wght@400;700;900&display=swap');
+
+:root {
+  --bg-dark: #080310;
+  --bg-card: rgba(18, 8, 30, 0.88);
+  --pumpkin-orange: #ff7700;
+  --pumpkin-glow: #ff9900;
+  --ghost-cyan: #00ffcc;
+  --toxic-green: #39ff14;
+  --blood-red: #e60039;
+  --blood-dark: #800018;
+  --witch-purple: #9d00ff;
+  --text-light: #f5edfc;
+  --text-muted: #aa99bb;
+  --border-spooky: 1px solid rgba(255, 119, 0, 0.35);
+  --box-glow: 0 0 25px rgba(255, 119, 0, 0.25);
+}
+
+/* Blood Moon Theme Override */
+body.blood-moon-active {
+  --bg-dark: #1f040a;
+  --bg-card: rgba(45, 8, 18, 0.92);
+  --pumpkin-orange: #ff2244;
+  --pumpkin-glow: #ff0033;
+  --box-glow: 0 0 40px rgba(255, 0, 50, 0.6);
+  --border-spooky: 1px solid rgba(255, 34, 68, 0.65);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-light);
+  font-family: 'Nunito', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+  transition: background-color 0.8s ease;
+  cursor: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'><text y='20' font-size='20'>🗡️</text></svg>"), auto;
+}
+
+/* Background Ambient Canvas */
+#ambient-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Blood Drip Top Decoration */
+.blood-drip-top {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: linear-gradient(90deg, #b70024, #ff0033, #700015);
+  box-shadow: 0 2px 14px rgba(255, 0, 50, 0.7);
+  z-index: 50;
+}
+
+/* "ENTER IF YOU DARE" Blood Gatekeeper Modal */
+#gatekeeper-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: radial-gradient(circle at center, rgba(30, 4, 12, 0.97) 0%, rgba(5, 1, 8, 0.99) 100%);
+  z-index: 300;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+#gatekeeper-modal.unsealed {
+  opacity: 0;
+  transform: scale(1.1);
+  pointer-events: none;
+}
+
+.gatekeeper-parchment {
+  background: rgba(14, 4, 22, 0.95);
+  border: 2px solid var(--blood-red);
+  box-shadow: 0 0 60px rgba(230, 0, 57, 0.7);
+  border-radius: 18px;
+  padding: 3rem 2.5rem;
+  max-width: 580px;
+  width: 90vw;
+  text-align: center;
+  position: relative;
+}
+
+.gatekeeper-skull {
+  font-size: 4rem;
+  filter: drop-shadow(0 0 16px #ff0033);
+  animation: pulseSkull 2s infinite alternate;
+}
+
+@keyframes pulseSkull {
+  0% { transform: scale(1); filter: drop-shadow(0 0 10px #ff0033); }
+  100% { transform: scale(1.1); filter: drop-shadow(0 0 25px #ff0055); }
+}
+
+.gatekeeper-warning-title {
+  font-family: 'Nosifer', cursive;
+  font-size: 1.8rem;
+  color: var(--blood-red);
+  letter-spacing: 2px;
+  margin: 1rem 0;
+  text-shadow: 0 0 15px rgba(230, 0, 57, 0.8);
+}
+
+.gatekeeper-lore {
+  font-style: italic;
+  color: #d1bfe3;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.btn-blood-seal {
+  background: linear-gradient(135deg, #cc0033, #800018);
+  border: 2px solid #ff3366;
+  color: #fff;
+  font-family: 'Nosifer', cursive;
+  font-size: 1.15rem;
+  letter-spacing: 1.5px;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 0 25px rgba(255, 0, 60, 0.6);
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.btn-blood-seal:hover {
+  background: linear-gradient(135deg, #ff0044, #b30024);
+  box-shadow: 0 0 45px rgba(255, 0, 60, 0.9);
+  transform: scale(1.05);
+}
+
+/* Main Container */
+.site-wrapper {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 1.5rem 1.5rem 2rem 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Header & Spooky Navigation */
+header {
+  padding: 1.2rem 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 119, 0, 0.2);
+  margin-bottom: 1.5rem;
+}
+
+.brand-section {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.brand-icon {
+  font-size: 2.8rem;
+  filter: drop-shadow(0 0 14px var(--pumpkin-glow));
+  animation: floatPumpkin 3s ease-in-out infinite alternate;
+}
+
+@keyframes floatPumpkin {
+  0% { transform: translateY(0) rotate(-4deg); }
+  100% { transform: translateY(-8px) rotate(4deg); }
+}
+
+.brand-title {
+  font-family: 'Nosifer', cursive;
+  font-size: 2rem;
+  color: var(--pumpkin-orange);
+  text-shadow: 0 0 18px rgba(255, 119, 0, 0.6);
+  letter-spacing: 2px;
+}
+
+.brand-subtitle {
+  font-family: 'Creepster', cursive;
+  font-size: 1.05rem;
+  color: var(--ghost-cyan);
+  letter-spacing: 1.5px;
+}
+
+/* Crypt Link Status & Controls */
+.top-controls {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+}
+
+.connection-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.status-dot.online {
+  background-color: var(--toxic-green);
+  box-shadow: 0 0 8px var(--toxic-green);
+}
+
+.status-dot.offline {
+  background-color: var(--blood-red);
+  box-shadow: 0 0 8px var(--blood-red);
+}
+
+.player-profile-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(40, 15, 60, 0.75);
+  border: 1px solid rgba(255, 119, 0, 0.4);
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.player-profile-badge:hover {
+  background: rgba(60, 25, 90, 0.95);
+  border-color: var(--pumpkin-glow);
+  box-shadow: 0 0 14px var(--pumpkin-glow);
+}
+
+.player-avatar-circle {
+  font-size: 1.3rem;
+}
+
+.player-name-label {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #fff;
+}
+
+.audio-toggle-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-spooky-secondary {
+  background: rgba(30, 15, 45, 0.8);
+  border: 1px solid rgba(255, 119, 0, 0.3);
+  color: var(--text-light);
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-family: inherit;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.btn-spooky-secondary:hover, .btn-spooky-secondary.active {
+  background: rgba(255, 119, 0, 0.28);
+  border-color: var(--pumpkin-orange);
+  color: #fff;
+  box-shadow: 0 0 14px rgba(255, 119, 0, 0.4);
+}
+
+/* Alert Banner */
+.spooky-banner {
+  display: none;
+  background: linear-gradient(90deg, #cc0033, #ff3300, #cc0033);
+  background-size: 200% 100%;
+  animation: bannerGlow 2s linear infinite;
+  color: #fff;
+  font-family: 'Nosifer', cursive;
+  font-size: 1rem;
+  text-align: center;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 0 20px rgba(255, 0, 50, 0.7);
+}
+
+.spooky-banner.active {
+  display: block;
+}
+
+@keyframes bannerGlow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* Haunt Energy & Live Spirits Bar */
+.haunt-status-bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 1.5rem;
+  background: var(--bg-card);
+  border: var(--border-spooky);
+  border-radius: 12px;
+  padding: 0.9rem 1.4rem;
+  margin-bottom: 1.8rem;
+  box-shadow: var(--box-glow);
+  backdrop-filter: blur(8px);
+}
+
+.haunt-meter-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.haunt-label-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--pumpkin-orange);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.haunt-progress-track {
+  height: 14px;
+  background: rgba(10, 5, 20, 0.85);
+  border-radius: 7px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 119, 0, 0.4);
+  position: relative;
+}
+
+.haunt-progress-fill {
+  height: 100%;
+  width: 35%;
+  background: linear-gradient(90deg, #ff7700, #ff0055, #ffaa00);
+  box-shadow: 0 0 15px rgba(255, 119, 0, 0.8);
+  transition: width 0.5s ease-out;
+}
+
+.blood-moon-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: 'Nosifer', cursive;
+  font-size: 0.95rem;
+  color: #ff3344;
+  animation: bloodPulse 1.2s infinite alternate;
+}
+
+@keyframes bloodPulse {
+  0% { transform: scale(1); filter: drop-shadow(0 0 4px #ff0033); }
+  100% { transform: scale(1.06); filter: drop-shadow(0 0 16px #ff0033); }
+}
+
+.live-spirits-tag {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  color: var(--ghost-cyan);
+  font-size: 0.95rem;
+}
+
+/* Main Layout Grid */
+.arcade-content-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 1.8rem;
+  align-items: start;
+}
+
+/* Games Section */
+.games-hub-header {
+  margin-bottom: 1.2rem;
+}
+
+.section-title {
+  font-family: 'Creepster', cursive;
+  font-size: 2.3rem;
+  color: var(--pumpkin-orange);
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.section-subtext {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.games-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 1.4rem;
+  margin-bottom: 2rem;
+}
+
+/* Individual Spooky Game Card */
+.game-card {
+  background: var(--bg-card);
+  border: var(--border-spooky);
+  border-radius: 14px;
+  padding: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: var(--box-glow);
+  backdrop-filter: blur(10px);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.game-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--pumpkin-orange), var(--witch-purple));
+  opacity: 0.7;
+}
+
+.game-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--pumpkin-glow);
+  box-shadow: 0 10px 30px rgba(255, 119, 0, 0.4);
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.card-icon {
+  font-size: 2.8rem;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 0.6rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 119, 0, 0.25);
+}
+
+.card-title {
+  font-family: 'Creepster', cursive;
+  font-size: 1.6rem;
+  color: var(--pumpkin-orange);
+  letter-spacing: 1px;
+  line-height: 1.1;
+}
+
+.card-badge {
+  font-size: 0.75rem;
+  background: rgba(157, 0, 255, 0.3);
+  color: #d896ff;
+  border: 1px solid rgba(157, 0, 255, 0.5);
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  display: inline-block;
+  margin-top: 0.25rem;
+}
+
+.card-desc {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  margin-bottom: 1.2rem;
+  flex-grow: 1;
+}
+
+.card-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1.2rem;
+}
+
+.feature-tag {
+  background: rgba(0, 0, 0, 0.45);
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  color: var(--ghost-cyan);
+  border: 1px solid rgba(0, 255, 204, 0.25);
+}
+
+.btn-launch-game, .btn-spooky-retry {
+  background: linear-gradient(135deg, #ff7700, #cc3300);
+  border: none;
+  color: #fff;
+  font-family: 'Creepster', cursive;
+  font-size: 1.3rem;
+  letter-spacing: 1.5px;
+  padding: 0.75rem 1.4rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 15px rgba(255, 119, 0, 0.4);
+  transition: all 0.2s ease;
+}
+
+.btn-launch-game:hover, .btn-spooky-retry:hover {
+  background: linear-gradient(135deg, #ff9900, #ff3300);
+  box-shadow: 0 6px 20px rgba(255, 119, 0, 0.7);
+  transform: scale(1.02);
+}
+
+/* Spell Casting Bar (Live Multi-screen interactive cursings) */
+.spell-caster-box {
+  background: var(--bg-card);
+  border: var(--border-spooky);
+  border-radius: 12px;
+  padding: 1.2rem;
+  box-shadow: var(--box-glow);
+  backdrop-filter: blur(8px);
+}
+
+.spell-box-header {
+  font-family: 'Creepster', cursive;
+  font-size: 1.4rem;
+  color: var(--pumpkin-orange);
+  margin-bottom: 0.4rem;
+}
+
+.spell-box-subtitle {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-bottom: 0.8rem;
+}
+
+.spell-buttons-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.spell-btn {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 119, 0, 0.3);
+  font-size: 1.4rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.spell-btn:hover {
+  transform: scale(1.2) rotate(6deg);
+  background: rgba(255, 119, 0, 0.2);
+  border-color: var(--pumpkin-glow);
+}
+
+.spell-chat-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.spell-chat-input {
+  flex-grow: 1;
+  background: rgba(10, 5, 20, 0.8);
+  border: 1px solid rgba(255, 119, 0, 0.3);
+  border-radius: 6px;
+  padding: 0.6rem 0.8rem;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+.spell-chat-input:focus {
+  outline: none;
+  border-color: var(--ghost-cyan);
+  box-shadow: 0 0 10px rgba(0, 255, 204, 0.3);
+}
+
+/* Sidebar: Live Leaderboards & Live Feed */
+.sidebar-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.leaderboard-box, .feed-box {
+  background: var(--bg-card);
+  border: var(--border-spooky);
+  border-radius: 14px;
+  padding: 1.3rem;
+  box-shadow: var(--box-glow);
+  backdrop-filter: blur(8px);
+}
+
+.box-heading {
+  font-family: 'Creepster', cursive;
+  font-size: 1.5rem;
+  color: var(--pumpkin-orange);
+  margin-bottom: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.tabs-row {
+  display: flex;
+  gap: 0.3rem;
+  margin-bottom: 0.9rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.4rem;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-btn.active {
+  background: rgba(255, 119, 0, 0.25);
+  color: var(--pumpkin-orange);
+}
+
+.leaderboard-panel {
+  display: none;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.leaderboard-panel.active {
+  display: flex;
+}
+
+.leaderboard-row {
+  display: grid;
+  grid-template-columns: 24px 28px 1fr auto;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.6rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  border-left: 3px solid transparent;
+}
+
+.leaderboard-row.rank-1 {
+  border-left-color: #ffd700;
+  background: rgba(255, 215, 0, 0.08);
+}
+.leaderboard-row.rank-2 {
+  border-left-color: #c0c0c0;
+}
+.leaderboard-row.rank-3 {
+  border-left-color: #cd7f32;
+}
+
+.rank-num {
+  font-weight: 900;
+  color: var(--text-muted);
+}
+.avatar-tag { font-size: 1.1rem; }
+.player-tag {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.score-tag {
+  font-family: monospace;
+  font-weight: 700;
+  color: var(--pumpkin-orange);
+}
+
+.activity-feed-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 0.2rem;
+}
+
+.feed-item {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  background: rgba(0, 0, 0, 0.25);
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  border-left: 2px solid var(--ghost-cyan);
+  line-height: 1.35;
+}
+
+.feed-item.new {
+  animation: feedFadeIn 0.5s ease-out;
+}
+
+@keyframes feedFadeIn {
+  0% { transform: translateX(20px); opacity: 0; background: rgba(255, 119, 0, 0.3); }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+/* Modals with Strict Layer Hierarchy */
+.spooky-modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(5, 2, 10, 0.88);
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(8px);
+}
+
+.spooky-modal-overlay.visible {
+  display: flex;
+}
+
+/* Game Playing Modal - z-index 100 */
+#game-modal {
+  z-index: 100;
+}
+
+.game-modal-content {
+  background: #11071c;
+  border: 2px solid var(--pumpkin-orange);
+  box-shadow: 0 0 45px rgba(255, 119, 0, 0.55);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  max-width: 860px;
+  width: 95vw;
+  overflow: hidden;
+}
+
+.game-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 1.4rem;
+  background: rgba(20, 10, 35, 0.95);
+  border-bottom: 1px solid rgba(255, 119, 0, 0.3);
+}
+
+.game-modal-title {
+  font-family: 'Creepster', cursive;
+  font-size: 1.6rem;
+  color: var(--pumpkin-orange);
+  letter-spacing: 1px;
+}
+
+.btn-quit {
+  background: rgba(255, 0, 50, 0.2);
+  border: 1px solid rgba(255, 0, 50, 0.4);
+  color: #ff6677;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.btn-quit:hover {
+  background: #ff0033;
+  color: #fff;
+}
+
+.canvas-viewport {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+}
+
+#game-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.game-instructions-bar {
+  padding: 0.7rem 1.4rem;
+  background: rgba(15, 8, 25, 0.95);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Game Over Modal - z-index 150 (Always on top of game modal) */
+#gameover-modal {
+  z-index: 150;
+}
+
+.gameover-box {
+  background: #15041a;
+  border: 2px solid var(--blood-red);
+  box-shadow: 0 0 45px rgba(230, 0, 57, 0.7);
+  border-radius: 14px;
+  padding: 2.4rem;
+  text-align: center;
+  max-width: 450px;
+  width: 90vw;
+}
+
+.gameover-title {
+  font-family: 'Nosifer', cursive;
+  font-size: 1.9rem;
+  color: var(--blood-red);
+  margin-bottom: 0.8rem;
+}
+
+.gameover-score-wrap {
+  margin: 1.2rem 0;
+}
+
+.gameover-score-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.gameover-score-val {
+  font-family: 'Creepster', cursive;
+  font-size: 2.7rem;
+  color: var(--pumpkin-orange);
+  letter-spacing: 2px;
+}
+
+.gameover-msg {
+  color: #d1b8e6;
+  font-style: italic;
+  font-size: 0.95rem;
+  margin-bottom: 1.6rem;
+}
+
+.gameover-actions {
+  display: flex;
+  gap: 0.8rem;
+  justify-content: center;
+}
+
+/* Profile Modal - z-index 200 */
+#profile-modal {
+  z-index: 200;
+}
+
+.profile-edit-box {
+  background: #170b28;
+  border: 2px solid var(--pumpkin-orange);
+  border-radius: 14px;
+  padding: 1.8rem;
+  width: 360px;
+  max-width: 90vw;
+}
+
+.avatar-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.avatar-choice {
+  font-size: 1.8rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 0.4rem;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.avatar-choice.selected, .avatar-choice:hover {
+  background: rgba(255, 119, 0, 0.3);
+  border-color: var(--pumpkin-orange);
+  transform: scale(1.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 920px) {
+  .arcade-content-grid {
+    grid-template-columns: 1fr;
+  }
+  .haunt-status-bar {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+  }
+  .live-spirits-tag {
+    justify-content: flex-start;
+  }
+}
