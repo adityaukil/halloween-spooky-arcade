@@ -1,0 +1,6 @@
+[build]
+  # The arcade's front-end (index.html, CSS, game scripts) lives in /public.
+  # Without this, Netlify publishes the repo root, which has no index.html -> 404.
+  publish = "public"
+  # No build step is required for the static site.
+  command = ""
