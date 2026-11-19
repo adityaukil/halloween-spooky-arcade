@@ -3,6 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const fs = require('fs');
+const db = require('./database');
 
 const app = express();
 const server = http.createServer(app);
@@ -15,71 +16,10 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = path.join(__dirname, 'data');
-const SCORES_FILE = path.join(DATA_DIR, 'scores.json');
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-
-const DEFAULT_SCORES = {
-  soulheist: [
-    { name: 'ShadowPhantom', score: 6450, date: '2026-10-12', avatar: '👻' },
-    { name: 'CryptThief', score: 4820, date: '2026-10-12', avatar: '🗝️' },
-    { name: 'GraveRobber', score: 3350, date: '2026-10-12', avatar: '💀' },
-    { name: 'SpectralHex', score: 2180, date: '2026-10-12', avatar: '🔮' },
-    { name: 'NightStalker', score: 1400, date: '2026-10-12', avatar: '🦇' }
-  ],
-  necromancer: [
-    { name: 'ArchLich', score: 7800, date: '2026-10-12', avatar: '🧙‍♂️' },
-    { name: 'BloodWeaver', score: 5490, date: '2026-10-12', avatar: '🩸' },
-    { name: 'RuneMaster', score: 3900, date: '2026-10-12', avatar: '📜' },
-    { name: 'CursedSorcerer', score: 2600, date: '2026-10-12', avatar: '⚡' },
-    { name: 'OccultNovice', score: 1750, date: '2026-10-12', avatar: '🕯️' }
-  ],
-  survivor: [
-    { name: 'VampireBane', score: 9200, date: '2026-10-12', avatar: '🧛‍♂️' },
-    { name: 'CarnivalSlayer', score: 6750, date: '2026-10-12', avatar: '🎃' },
-    { name: 'MidnightReaper', score: 4800, date: '2026-10-12', avatar: '🗡️' },
-    { name: 'SoulHarvester', score: 3100, date: '2026-10-12', avatar: '⚰️' },
-    { name: 'CryptWanderer', score: 1950, date: '2026-10-12', avatar: '🧟' }
-  ],
-  tombstone: [
-    { name: 'GrimReaper', score: 4850, date: '2026-10-12', avatar: '💀' }
-  ],
-  pumpkin: [
-    { name: 'JackTheSlasher', score: 5600, date: '2026-10-12', avatar: '🎃' }
-  ],
-  manor: [
-    { name: 'GhostExorcist', score: 6200, date: '2026-10-12', avatar: '🕯️' }
-  ]
-};
-
-// Load or initialize scores
-let highScores = { ...DEFAULT_SCORES };
-try {
-  if (fs.existsSync(SCORES_FILE)) {
-    const rawData = fs.readFileSync(SCORES_FILE, 'utf8');
-    const parsed = JSON.parse(rawData);
-    highScores = { ...DEFAULT_SCORES, ...parsed };
-    for (const key of Object.keys(DEFAULT_SCORES)) {
-      if (!highScores[key] || !Array.isArray(highScores[key]) || highScores[key].length === 0) {
-        highScores[key] = [...DEFAULT_SCORES[key]];
-      }
-    }
-  } else {
-    fs.writeFileSync(SCORES_FILE, JSON.stringify(DEFAULT_SCORES, null, 2));
-  }
-} catch (e) {
-  console.error('Error loading scores, using default:', e);
-}
-
-function saveScores() {
-  try {
-    fs.writeFileSync(SCORES_FILE, JSON.stringify(highScores, null, 2));
-  } catch (err) {
-    console.error('Failed to save scores:', err);
-  }
 }
 
 // Global Haunting State (synchronized across all connected spirits)
@@ -95,16 +35,40 @@ let liveActivity = [
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-// REST endpoint for status & scores
+// REST endpoints for status & SQLite database records
 app.get('/api/scores', (req, res) => {
-  res.json(highScores);
+  res.json(db.getAllLeaderboards(10));
+});
+
+app.get('/api/leaderboard/:game', (req, res) => {
+  const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
+  res.json(db.getLeaderboard(req.params.game, limit));
+});
+
+app.get('/api/plays/recent', (req, res) => {
+  const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 15));
+  res.json(db.getRecentPlays(req.query.game || null, limit));
+});
+
+app.get('/api/stats', (req, res) => {
+  res.json({
+    ...db.getStats(),
+    hauntMeter,
+    isBloodMoonActive,
+    activeSpirits: io.engine.clientsCount
+  });
+});
+
+app.get('/api/player/:name', (req, res) => {
+  res.json(db.getPlayerHistory(req.params.name, 10));
 });
 
 app.get('/api/haunt-status', (req, res) => {
   res.json({
     hauntMeter,
     isBloodMoonActive,
-    activeSpirits: io.engine.clientsCount
+    activeSpirits: io.engine.clientsCount,
+    totalPlays: db.getStats().totalPlays
   });
 });
 
@@ -124,10 +88,12 @@ io.on('connection', (socket) => {
     score: 0
   });
 
-  // Send current state to newly connected spirit
+  // Send current state to newly connected spirit from SQLite database
   socket.emit('init_state', {
     identity: activeUsers.get(socket.id),
-    scores: highScores,
+    scores: db.getAllLeaderboards(10),
+    recentPlays: db.getRecentPlays(null, 10),
+    stats: db.getStats(),
     hauntMeter,
     isBloodMoonActive,
     activity: liveActivity.slice(0, 10),
@@ -163,45 +129,67 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Score submission when game ends (or milestone reached)
+  // Score submission for EVERY real play - stored persistently in SQLite database!
   socket.on('submit_score', (data) => {
-    const { game, score, name, avatar } = data;
-    if (!highScores[game] || typeof score !== 'number' || score <= 0) return;
+    const { game, score, name, avatar, details } = data || {};
+    if (typeof score !== 'number' || score <= 0) return;
 
-    const playerName = (name || 'Anonymous Ghoul').substring(0, 16);
-    const playerAvatar = avatar || '👻';
+    const cleanGame = (game || '').toLowerCase();
+    const validGames = ['soulheist', 'necromancer', 'survivor', 'tombstone', 'pumpkin', 'manor'];
+    if (!validGames.includes(cleanGame)) return;
 
-    const entry = {
+    const user = activeUsers.get(socket.id);
+    const playerName = (name || (user ? user.name : 'Anonymous Ghoul')).substring(0, 16);
+    const playerAvatar = avatar || (user ? user.avatar : '👻');
+
+    // 1. Permanently record every single play in the SQLite database
+    const recorded = db.recordPlay({
       name: playerName,
-      score: Math.floor(score),
-      date: new Date().toISOString().split('T')[0],
-      avatar: playerAvatar
-    };
-
-    // Insert into leaderboard if top 10
-    const list = highScores[game];
-    list.push(entry);
-    list.sort((a, b) => b.score - a.score);
-    if (list.length > 10) list.pop();
-
-    saveScores();
-
-    // Broadcast updated leaderboard immediately to all clients!
-    io.emit('leaderboard_updated', {
-      game,
-      scores: highScores[game],
-      newEntry: entry
+      avatar: playerAvatar,
+      game: cleanGame,
+      score,
+      details,
+      sessionId: socket.id
     });
 
-    // Check if new #1 high score!
-    if (list[0].name === entry.name && list[0].score === entry.score) {
+    // 2. Fetch freshly calculated real-time top leaderboard & stats from database
+    const updatedLeaderboard = db.getLeaderboard(cleanGame, 10);
+    const stats = db.getStats();
+
+    // 3. Confirm to the player that their play has been persisted in the database with their rank
+    socket.emit('play_recorded', {
+      play: recorded,
+      game: cleanGame,
+      rank: recorded.rank,
+      totalPlays: recorded.totalPlays,
+      isAllTimeRecord: recorded.isAllTimeRecord
+    });
+
+    // 4. Instantly broadcast updated leaderboard & stats to ALL connected spirits in real time
+    io.emit('leaderboard_updated', {
+      game: cleanGame,
+      scores: updatedLeaderboard,
+      newEntry: recorded,
+      stats
+    });
+
+    // 5. Broadcast real-time play event for the activity feed & recent plays ticker
+    io.emit('new_play_recorded', {
+      play: recorded,
+      stats
+    });
+
+    // 6. Broadcast celebratory horror alerts and chronicles
+    if (recorded.isAllTimeRecord) {
       io.emit('spooky_alert', {
         type: 'RECORD_SMASHED',
-        message: `🔥 NEW RECORD! ${entry.avatar} ${entry.name} seized #1 in ${getGameTitle(game)} with ${entry.score.toLocaleString()} PTS!`
+        message: `🔥 NEW ALL-TIME RECORD! ${recorded.avatar} ${recorded.name} seized #1 in ${getGameTitle(cleanGame)} with ${recorded.score.toLocaleString()} PTS!`
       });
-      addActivity(`🏆 ${entry.avatar} ${entry.name} set a NEW HIGH SCORE of ${entry.score.toLocaleString()} in ${getGameTitle(game)}!`);
+      addActivity(`🏆 ${recorded.avatar} ${recorded.name} broke the ALL-TIME HIGH SCORE of ${recorded.score.toLocaleString()} in ${getGameTitle(cleanGame)}!`);
+    } else if (recorded.rank <= 3) {
+      addActivity(`🥉 ${recorded.avatar} ${recorded.name} claimed Rank #${recorded.rank} with ${recorded.score.toLocaleString()} PTS in ${getGameTitle(cleanGame)}!`);
     } else {
-      addActivity(`⚡ ${entry.avatar} ${entry.name} conquered ${entry.score.toLocaleString()} PTS in ${getGameTitle(game)}!`);
+      addActivity(`⚡ ${recorded.avatar} ${recorded.name} logged ${recorded.score.toLocaleString()} PTS in ${getGameTitle(cleanGame)} [Play #${recorded.id}]!`);
     }
 
     // Boost haunting energy upon game finish

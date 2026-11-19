@@ -203,11 +203,19 @@
       <aside class="sidebar-panel">
         <!-- Live Leaderboard Box -->
         <div class="leaderboard-box">
-          <h3 class="box-heading"><span>🏆</span> Crypt Leaderboard</h3>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+            <h3 class="box-heading" style="margin-bottom: 0;"><span>🏆</span> Crypt Leaderboard</h3>
+          </div>
+          <div class="db-status-bar">
+            <span class="db-indicator-pulse"></span>
+            <span id="db-total-plays-badge">💾 SQLite DB: <b id="db-total-plays-count">--</b> Real Plays Persisted</span>
+          </div>
+
           <div class="tabs-row">
-            <button class="tab-btn active" data-tab="soulheist">🗝️ Vault Heist</button>
-            <button class="tab-btn" data-tab="necromancer">🔯 Necromancy</button>
+            <button class="tab-btn active" data-tab="soulheist">🗝️ Vault</button>
+            <button class="tab-btn" data-tab="necromancer">🔯 Ritual</button>
             <button class="tab-btn" data-tab="survivor">🗡️ Survivor</button>
+            <button class="tab-btn" data-tab="recent">⚡ Live Plays</button>
           </div>
 
           <div id="board-soulheist" class="leaderboard-panel active">
@@ -218,6 +226,9 @@
           </div>
           <div id="board-survivor" class="leaderboard-panel">
             <div id="leaderboard-survivor"></div>
+          </div>
+          <div id="board-recent" class="leaderboard-panel">
+            <div id="leaderboard-recent"></div>
           </div>
         </div>
 
@@ -255,6 +266,10 @@
       <div class="gameover-score-wrap">
         <div class="gameover-score-label">Final Score Achieved</div>
         <div id="gameover-score-value" class="gameover-score-val">0</div>
+      </div>
+      <div id="gameover-db-badge" class="gameover-db-badge">
+        <span class="db-icon">💾</span>
+        <span id="gameover-db-text">Persisting run to Crypt Database...</span>
       </div>
       <p id="gameover-message" class="gameover-msg">Your soul now wanders the mist...</p>
       <div class="gameover-actions">

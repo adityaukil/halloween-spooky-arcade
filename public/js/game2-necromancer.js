@@ -729,7 +729,10 @@ class NecromancerRitualGame {
     }
 
     if (window.spookyNetwork) {
-      window.spookyNetwork.submitScore('necromancer', finalScore);
+      window.spookyNetwork.submitScore('necromancer', finalScore, {
+        wave: this.wave,
+        kills: this.enemiesDefeated
+      });
     }
 
     if (window.onSpookyGameOver) {

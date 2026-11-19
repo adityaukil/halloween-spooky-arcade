@@ -202,11 +202,18 @@ window.onSpookyGameOver = function(gameKey, score) {
   const title = document.getElementById('gameover-title');
   const scoreVal = document.getElementById('gameover-score-value');
   const message = document.getElementById('gameover-message');
+  const dbBadge = document.getElementById('gameover-db-badge');
+  const dbText = document.getElementById('gameover-db-text');
 
   if (!modal) return;
 
   title.textContent = '💀 REST IN PEACE 💀';
   scoreVal.textContent = `${score.toLocaleString()} POINTS`;
+
+  if (dbBadge && dbText) {
+    dbBadge.className = 'gameover-db-badge';
+    dbText.textContent = '💾 Syncing run to SQLite Crypt Database...';
+  }
 
   const quotes = [
     'Your soul now wanders the midnight mist...',
@@ -218,6 +225,25 @@ window.onSpookyGameOver = function(gameKey, score) {
   message.textContent = quotes[Math.floor(Math.random() * quotes.length)];
 
   modal.classList.add('visible');
+};
+
+// Database confirmation callback when server stores the play in SQLite
+window.onPlayRecordedInDatabase = function(data) {
+  const badge = document.getElementById('gameover-db-badge');
+  const text = document.getElementById('gameover-db-text');
+  if (!badge || !text) return;
+
+  const { play, rank, totalPlays, isAllTimeRecord } = data;
+  if (isAllTimeRecord) {
+    badge.className = 'gameover-db-badge record-flash';
+    text.innerHTML = `👑 <b>ALL-TIME #1 RECORD!</b> Stored in DB (Play #${play.id})`;
+  } else if (rank <= 3) {
+    badge.className = 'gameover-db-badge record-flash';
+    text.innerHTML = `🏆 <b>TOP 3 RUN!</b> Saved in DB (Play #${play.id}) • Rank #${rank} of ${totalPlays}`;
+  } else {
+    badge.className = 'gameover-db-badge';
+    text.innerHTML = `💾 <b>Run Saved to Database!</b> Play #${play.id} • Rank #${rank} of ${totalPlays}`;
+  }
 };
 
 function initGameOverModal() {

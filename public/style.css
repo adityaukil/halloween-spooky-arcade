@@ -711,6 +711,97 @@ header {
   color: var(--pumpkin-orange);
 }
 
+.db-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.76rem;
+  color: var(--ghost-cyan);
+  background: rgba(0, 255, 204, 0.08);
+  border: 1px solid rgba(0, 255, 204, 0.25);
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  margin-bottom: 0.8rem;
+}
+
+.db-indicator-pulse {
+  width: 8px;
+  height: 8px;
+  background: #00ffcc;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #00ffcc;
+  animation: dbPulse 2s infinite ease-in-out;
+  flex-shrink: 0;
+}
+
+@keyframes dbPulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+.leaderboard-row.current-player-row {
+  border: 1px solid var(--pumpkin-orange);
+  box-shadow: 0 0 10px rgba(255, 119, 0, 0.35);
+  background: rgba(255, 119, 0, 0.12);
+  animation: playerRowPulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes playerRowPulse {
+  0% { box-shadow: 0 0 8px rgba(255, 119, 0, 0.25); }
+  100% { box-shadow: 0 0 16px rgba(255, 119, 0, 0.6); }
+}
+
+.player-info-wrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.row-details {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.play-id-tag {
+  font-size: 0.65rem;
+  color: #aa99bb;
+  font-family: monospace;
+}
+
+.gameover-db-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(0, 255, 204, 0.12);
+  border: 1px solid rgba(0, 255, 204, 0.4);
+  color: #00ffcc;
+  padding: 0.5rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  margin: 0.8rem 0;
+  font-weight: 700;
+  text-shadow: 0 0 6px rgba(0, 255, 204, 0.4);
+  transition: all 0.3s ease;
+}
+
+.gameover-db-badge.record-flash {
+  background: rgba(255, 215, 0, 0.2);
+  border-color: #ffd700;
+  color: #ffd700;
+  box-shadow: 0 0 18px rgba(255, 215, 0, 0.6);
+  animation: goldPulse 1s infinite alternate;
+}
+
+@keyframes goldPulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.02); }
+}
+
 .activity-feed-list {
   display: flex;
   flex-direction: column;

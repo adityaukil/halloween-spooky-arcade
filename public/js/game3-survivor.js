@@ -761,7 +761,11 @@ class MidnightSurvivorGame {
     }
 
     if (window.spookyNetwork) {
-      window.spookyNetwork.submitScore('survivor', finalScore);
+      window.spookyNetwork.submitScore('survivor', finalScore, {
+        level: this.player ? this.player.level : 1,
+        kills: this.kills || 0,
+        timeSurvived: this.survivalSeconds || 0
+      });
     }
 
     if (window.onSpookyGameOver) {

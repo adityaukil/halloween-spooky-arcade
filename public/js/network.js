@@ -1,4 +1,4 @@
-// Socket.io Real-time Client Integration
+// Socket.io Real-time Client Integration with SQLite Database Synchronization
 
 class SpookyNetwork {
   constructor() {
@@ -13,6 +13,15 @@ class SpookyNetwork {
       necromancer: [],
       survivor: []
     };
+    this.recentPlays = [];
+    this.stats = {
+      totalPlays: 0,
+      uniquePlayers: 0,
+      totalScore: 0,
+      highestScore: 0,
+      dbEngine: 'SQLite'
+    };
+    this.lastRecordedPlay = null;
     this.hauntMeter = 30;
     this.isBloodMoonActive = false;
     this.scoreMultiplier = 1.0;
@@ -29,7 +38,7 @@ class SpookyNetwork {
 
     this.socket.on('connect', () => {
       this.connected = true;
-      console.log('👻 Connected to Haunted Arcade Server!');
+      console.log('👻 Connected to Haunted Arcade SQLite Server!');
       this.updateConnectionStatus(true);
     });
 
@@ -38,10 +47,9 @@ class SpookyNetwork {
       this.updateConnectionStatus(false);
     });
 
-    // Initial state from server
+    // Initial state from server database
     this.socket.on('init_state', (data) => {
       if (data.identity) {
-        // Restore from localStorage if player previously set one
         const savedName = localStorage.getItem('spooky_name');
         const savedAvatar = localStorage.getItem('spooky_avatar');
         if (savedName) {
@@ -57,6 +65,16 @@ class SpookyNetwork {
       if (data.scores) {
         this.scores = data.scores;
         this.renderAllLeaderboards();
+      }
+
+      if (data.recentPlays) {
+        this.recentPlays = data.recentPlays;
+        this.renderRecentPlays();
+      }
+
+      if (data.stats) {
+        this.stats = data.stats;
+        this.updateStatsUI();
       }
 
       if (typeof data.hauntMeter === 'number') {
@@ -81,16 +99,42 @@ class SpookyNetwork {
       this.updateActiveCount(data.count);
     });
 
-    // Leaderboard updates in real-time
+    // Confirmation that player's run has been stored in the SQLite database
+    this.socket.on('play_recorded', (data) => {
+      this.lastRecordedPlay = data.play;
+      if (typeof window.onPlayRecordedInDatabase === 'function') {
+        window.onPlayRecordedInDatabase(data);
+      }
+    });
+
+    // Leaderboard updates in real-time when any player completes a play
     this.socket.on('leaderboard_updated', (data) => {
       if (data.game && data.scores) {
         this.scores[data.game] = data.scores;
         this.renderLeaderboard(data.game);
+
+        if (data.stats) {
+          this.stats = data.stats;
+          this.updateStatsUI();
+        }
         
         // Audio sound chime if someone scored
         if (window.spookyAudio) {
           window.spookyAudio.playCandyChime();
         }
+      }
+    });
+
+    // Real-time notification of every play stored in the database
+    this.socket.on('new_play_recorded', (data) => {
+      if (data.play) {
+        this.recentPlays.unshift(data.play);
+        if (this.recentPlays.length > 20) this.recentPlays.pop();
+        this.renderRecentPlays();
+      }
+      if (data.stats) {
+        this.stats = data.stats;
+        this.updateStatsUI();
       }
     });
 
@@ -143,6 +187,7 @@ class SpookyNetwork {
       this.socket.emit('set_profile', this.identity);
     }
     this.updateProfileUI();
+    this.renderAllLeaderboards();
   }
 
   // Send live point gains during gameplay
@@ -152,14 +197,15 @@ class SpookyNetwork {
     }
   }
 
-  // Submit high score upon game over
-  submitScore(game, score) {
+  // Submit high score upon game over for EVERY play to be stored in the database
+  submitScore(game, score, details = '') {
     if (this.socket && this.connected) {
       this.socket.emit('submit_score', {
         game,
         score,
         name: this.identity.name,
-        avatar: this.identity.avatar
+        avatar: this.identity.avatar,
+        details
       });
     }
   }
@@ -174,7 +220,6 @@ class SpookyNetwork {
         y: 0.8
       });
     } else if (window.ambientFx) {
-      // Local preview if disconnected
       window.ambientFx.addFloatingSpell({
         spell,
         sender: this.identity.name,
@@ -192,7 +237,7 @@ class SpookyNetwork {
     if (dot && text) {
       if (isConnected) {
         dot.className = 'status-dot online';
-        text.textContent = 'Crypt Link: Synchronized';
+        text.textContent = 'Crypt Link: Synchronized (SQLite DB Live)';
       } else {
         dot.className = 'status-dot offline';
         text.textContent = 'Crypt Link: Severed';
@@ -212,6 +257,13 @@ class SpookyNetwork {
   updateActiveCount(count) {
     const el = document.getElementById('live-spirits-count');
     if (el) el.textContent = `${count} ${count === 1 ? 'Spirit' : 'Spirits'} Lurking`;
+  }
+
+  updateStatsUI() {
+    const countEl = document.getElementById('db-total-plays-count');
+    if (countEl && typeof this.stats.totalPlays === 'number') {
+      countEl.textContent = this.stats.totalPlays.toLocaleString();
+    }
   }
 
   updateHauntMeter(percentage) {
@@ -254,6 +306,8 @@ class SpookyNetwork {
     this.renderLeaderboard('soulheist');
     this.renderLeaderboard('necromancer');
     this.renderLeaderboard('survivor');
+    this.renderRecentPlays();
+    this.updateStatsUI();
   }
 
   renderLeaderboard(gameKey) {
@@ -262,17 +316,51 @@ class SpookyNetwork {
 
     const scores = this.scores[gameKey] || [];
     if (scores.length === 0) {
-      container.innerHTML = '<div class="empty-list">No souls recorded yet...</div>';
+      container.innerHTML = '<div class="empty-list">No souls recorded in database yet...</div>';
       return;
     }
 
     container.innerHTML = scores.map((entry, idx) => {
       const rankClass = idx === 0 ? 'rank-1' : (idx === 1 ? 'rank-2' : (idx === 2 ? 'rank-3' : ''));
+      const isCurrentPlayer = entry.name === this.identity.name ? 'current-player-row' : '';
+      const formattedDetails = formatDetails(entry.details);
+
       return `
-        <div class="leaderboard-row ${rankClass}">
+        <div class="leaderboard-row ${rankClass} ${isCurrentPlayer}">
           <span class="rank-num">#${idx + 1}</span>
           <span class="avatar-tag">${entry.avatar || '👻'}</span>
-          <span class="player-tag">${escapeHtml(entry.name)}</span>
+          <div class="player-info-wrap">
+            <span class="player-tag">${escapeHtml(entry.name)}${isCurrentPlayer ? ' <span style="color:var(--pumpkin-orange);font-size:0.7rem;">(YOU)</span>' : ''}</span>
+            ${formattedDetails ? `<span class="row-details">${escapeHtml(formattedDetails)}</span>` : ''}
+          </div>
+          <span class="score-tag">${entry.score.toLocaleString()} PTS</span>
+        </div>
+      `;
+    }).join('');
+  }
+
+  renderRecentPlays() {
+    const container = document.getElementById('leaderboard-recent');
+    if (!container) return;
+
+    if (!this.recentPlays || this.recentPlays.length === 0) {
+      container.innerHTML = '<div class="empty-list">Awaiting new plays to enter database...</div>';
+      return;
+    }
+
+    container.innerHTML = this.recentPlays.map((entry) => {
+      const isCurrentPlayer = entry.name === this.identity.name ? 'current-player-row' : '';
+      const gameLabel = getGameShortName(entry.game);
+      const formattedDetails = formatDetails(entry.details);
+
+      return `
+        <div class="leaderboard-row ${isCurrentPlayer}">
+          <span class="play-id-tag">#${entry.id}</span>
+          <span class="avatar-tag">${entry.avatar || '👻'}</span>
+          <div class="player-info-wrap">
+            <span class="player-tag">${escapeHtml(entry.name)} <span style="color:var(--ghost-cyan);font-size:0.7rem;">[${gameLabel}]</span></span>
+            ${formattedDetails ? `<span class="row-details">${escapeHtml(formattedDetails)}</span>` : ''}
+          </div>
           <span class="score-tag">${entry.score.toLocaleString()} PTS</span>
         </div>
       `;
@@ -294,10 +382,38 @@ class SpookyNetwork {
     div.className = 'feed-item new';
     div.textContent = item.text;
     feed.insertBefore(div, feed.firstChild);
-    while (feed.children.length > 20) {
+    while (feed.children.length > 25) {
       feed.removeChild(feed.lastChild);
     }
   }
+}
+
+function getGameShortName(gameKey) {
+  switch (gameKey) {
+    case 'soulheist': return 'Vault';
+    case 'necromancer': return 'Ritual';
+    case 'survivor': return 'Survivor';
+    case 'tombstone': return 'Runner';
+    case 'pumpkin': return 'Slasher';
+    case 'manor': return 'Manor';
+    default: return 'Arcade';
+  }
+}
+
+function formatDetails(details) {
+  if (!details) return '';
+  if (typeof details === 'object') {
+    return Object.entries(details).map(([k, v]) => `${k.charAt(0).toUpperCase() + k.slice(1)}: ${v}`).join(' • ');
+  }
+  if (typeof details === 'string' && details.startsWith('{')) {
+    try {
+      const obj = JSON.parse(details);
+      return Object.entries(obj).map(([k, v]) => `${k.charAt(0).toUpperCase() + k.slice(1)}: ${v}`).join(' • ');
+    } catch (e) {
+      return details;
+    }
+  }
+  return details;
 }
 
 function escapeHtml(str) {

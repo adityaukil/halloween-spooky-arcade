@@ -722,7 +722,10 @@ class SoulHeistGame {
     }
 
     if (window.spookyNetwork) {
-      window.spookyNetwork.submitScore('soulheist', finalScore);
+      window.spookyNetwork.submitScore('soulheist', finalScore, {
+        floor: this.floor,
+        relics: this.relicsSaved
+      });
     }
 
     if (window.onSpookyGameOver) {
