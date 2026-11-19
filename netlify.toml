@@ -1,0 +1,3 @@
+[build]
+  # The arcade's static front end (index.html, style.css, js/) lives in public/.
+  publish = "public"
